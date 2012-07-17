@@ -17,7 +17,9 @@
 
 (defroutes handler
   (GET "/" []
-    (templates/view-head "Hello")))
+    (templates/view-head))
+
+  (compojure.route/not-found "Page not Found"))
 
 (def app
   (-> #'handler

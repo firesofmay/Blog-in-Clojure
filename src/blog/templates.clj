@@ -5,22 +5,17 @@
   (:use hiccup.page)                  ; For Doctype
   (:use hiccup.core))
 
-(defn div3
-  [class1 class2 class3 & content]
-  [:div {:class class1}
-   [:div {:class class2}
-    [:div {:class class3}
-     content]]])
+(defn divs [classes & Body]
+             (if (next classes)
+               [:div {:class (first classes)} (divs (rest classes) Body)]
+               [:div {:class (first classes)} Body]))
+
 
 (defn view-body-index []
-  (div3 "navbar navbar-fixed-top" "navbar-inner" "container-fluid"
-        (link-to {:class "brand"} "/" "Firesofmay")
-        [:div {:class "btn-group pull-right"}
-         [:a {:class "btn dropdown-toggle"
-              :data-toggle "dropdown"
-              :href "#"}
-          [:i {:class "carret"}]
-          ]]))
+  (divs ["navbar navbar-fixed-top" "navbar-inner" "container-fluid"]
+        (link-to {:class "brand"} "/" "Firesofmay")))
+
+
 
 (defn view-head [& content]
   (html
