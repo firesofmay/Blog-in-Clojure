@@ -12,8 +12,9 @@
 
 
 (defn view-body-index []
-  (divs ["navbar navbar-fixed-top" "navbar-inner" "container-fluid"]
-        (link-to {:class "brand"} "/" "Firesofmay")))
+  (list (divs ["navbar navbar-fixed-top" "navbar-inner" "container-fluid"]
+         (link-to {:class "brand"} "/" "Firesofmay"))
+   (divs ["container-fluid" "row-fluid" "span3" "well sidebar-nav"] "Hello")))
 
 
 
@@ -26,6 +27,8 @@
                [:title "My Blaaag"]
                [:meta {:name "viewport"
                        :content= "width=device-width, initial-scale=1.0"}]
-               (include-css "/assets/css/bootstrap.css" "/assets/css/bootstrap-responsive.css")
+               (include-css "/assets/css/bootstrap.css"
+                            "/assets/css/bootstrap-responsive.css"
+                            "/assets/css/inline.css")
                ]
               [:body (view-body-index)])))
