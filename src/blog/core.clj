@@ -6,6 +6,7 @@
   (:use ring.util.response)
   (:use [ring.adapter.jetty :only [run-jetty]])
   (:require [clj-time.core :as time])
+  (:require [blog.templates :as templates])
   (:require monger.joda-time) ;this is to serialize the time when we store the timestamp
   (:require monger.json)      ;this is required by joda-time
   (:require [clj-time.format :as tf])
@@ -16,7 +17,7 @@
 
 (defroutes handler
   (GET "/" []
-       (html "Hello")))
+    (templates/view-head "Hello")))
 
 (def app
   (-> #'handler
