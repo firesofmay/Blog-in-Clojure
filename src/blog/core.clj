@@ -15,6 +15,11 @@
   (GET "/new-post" []
     (templates/view-head (templates/template-new-post)))
 
+  (POST "/new-post" [title tags post]
+    (println title (backend/sanitize-tags tags) post)
+    (backend/insert-post-into-db title tags post)
+    (redirect "/"))
+
   (compojure.route/not-found "Page not Found"))
 
 (def app
