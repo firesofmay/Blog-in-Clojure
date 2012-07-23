@@ -17,6 +17,13 @@
     [:li [:a {:href (str "/" x)} x]]))
 
 
+(defn gen-post-link-anchor [time title]
+  [:a {:href (backend/gen-post-link time title)} title])
+
+(apply backend/gen-post-link (first (map #(list (:time %)
+                                                (:title %))
+                                         (monger.collection/find-maps db-blog))))
+
 (defn view-body-index [& content]
   (list (divs ["navbar navbar-fixed-top" "navbar-inner" "container-fluid"]
               (link-to {:class "brand"} "/" "Firesofmay")
@@ -27,7 +34,11 @@
               (divs ["span3" "well sidebar-nav"]
                     [:ul.nav.nav-list
                      (gen-list (backend/get-tags-db))])
-              (divs ["span9" "row-fluid" "span9"] content))))
+              (divs ["span9"]
+                    [:div.hero-unit
+                     [:h1 "Blog of Firesofmay"]
+                     [:p "This is my blog written in clojure."]]
+                    (divs ["row-fluid"] content)))))
 
 (defn template-new-post []
   (form-to {:class "form-horizontal"} [:post "/new-post"]
@@ -53,7 +64,10 @@
       [:button.btn {:type "Reset" :value "Reset"} "Reset"]]]))
 
 (defn test-hello []
-  "Hello World")
+  (for [x (backend/get-coll db-blog)]
+    [:div.row-fluid
+     [:h1 (blog.templates/gen-post-link-anchor (:time x) (:title x))]
+     [:p (:post x)]]))
 
 (defn view-head [& content]
   (html

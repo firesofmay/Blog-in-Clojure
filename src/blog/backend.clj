@@ -17,13 +17,18 @@
 (def ^:const db-comments "comments")
 (def ^:const db-base "base-coll")
 
+(defn year-month [timestamp]
+  (tf/unparse (tf/formatter "yyyy/MM") timestamp))
+
 (defn gen-post-link [timestamp title]
-  [:a {:href (str "/" (year-month timestamp) (sanitize-title title) "-" (getepoch timestamp))} title])
+  (str "/" (year-month timestamp) (sanitize-title title) "-" (getepoch timestamp)))
 
 (defn get-posts-db []
   (map #(list (gen-post-link (:time %) (:title %) ))
                             (mc/find-maps db-blog)))
 
+(defn get-coll [coll]
+  (mc/find-maps coll))
 
 (defn get-tags-db []
                 (apply :tags (mc/find-maps db-base)))
@@ -39,8 +44,6 @@
 (defn time-format [timestamp]
   (tf/unparse (tf/formatters :year-month-day) timestamp))
 
-(defn year-month [timestamp]
-  (tf/unparse (tf/formatter "yyyy/MM") timestamp))
 
 
 (defn sub-newlines [body]
@@ -51,6 +54,9 @@
 
 (defn getepoch [timestamp]
   (int (/ (.getMillis timestamp) 1000)))
+
+
+
 
 
 (defn sanitize-tags [tags]
