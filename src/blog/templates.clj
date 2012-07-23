@@ -27,7 +27,7 @@
               (divs ["span3" "well sidebar-nav"]
                [:ul.nav.nav-list
                 (sidebar-posts (backend/get-posts-db))])
-              (divs ["span9" "row-fluid" "span4"] content))))
+              (divs ["span9" "row-fluid" "span9"] content))))
 
 (defn template-new-post []
   (form-to {:class "form-horizontal"} [:post "/new-post"]
@@ -37,17 +37,17 @@
                     [:div.control-group
                      (label {:class "control-label"} "input01" "Title")
                      [:div.controls
-                      [:input#input01.input-xlarge {:type "text" :style "width: 700px;"}]]]
+                      [:input#input01.input-xlarge {:type "text" :style "width: 100%; padding: 4px 0px;"}]]]
 
                     [:div.control-group
                      (label {:class "control-label"} "input02" "Tags")
                      [:div.controls
-                      [:input#input02.input-xlarge {:type "text" :style "width: 700px;"}]]]
+                      [:input#input02.input-xlarge {:type "text" :style "width: 100%; padding: 4px 0px;"}]]]
 
                     [:div.control-group
                      (label {:class "control-label"} "text1" "Post")
                      [:div.controls
-                      [:textarea#text1.input-xlarge {:style "width: 700px; height: 189px;"}]]]
+                      [:textarea#text1.input-xlarge {:rows "10" :style "width: 100%; padding: 4px 0px;"}]]]
 
                     [:div.form-actions
                      [:button.btn.btn-primary {:type "Submit"} "Submit Post"]
