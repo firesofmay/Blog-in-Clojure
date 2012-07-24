@@ -17,13 +17,15 @@
 (def ^:const db-comments "comments")
 (def ^:const db-base "base-coll")
 
-(defn year-month [timestamp]
-  (tf/unparse (tf/formatter "yyyy/MM") timestamp))
+(defn year-month [time]
+  (tf/unparse (tf/formatter "yyyy/MM") time))
 
-(defn gen-post-link [timestamp title]
-  (str "/" (year-month timestamp) (sanitize-title title) "-" (getepoch timestamp)))
+(defn year-month-date [time]
+  (tf/unparse (tf/formatter "YYYY/MM/dd") time))
 
-(defn get-posts-db []
+(year-month-date  (first (map #(:time %) (mc/find-maps db-comments))))
+
+#_(defn get-posts-db []
   (map #(list (gen-post-link (:time %) (:title %) ))
                             (mc/find-maps db-blog)))
 
@@ -31,7 +33,10 @@
   (mc/find-maps coll))
 
 (defn get-tags-db []
-                (apply :tags (mc/find-maps db-base)))
+  (let [coll (mc/find-maps db-base)]
+   (if (empty? coll)
+       [""]
+       (apply :tags coll))))
 
 (defn show [coll]
   (clojure.pprint/pprint
@@ -45,7 +50,6 @@
   (tf/unparse (tf/formatters :year-month-day) timestamp))
 
 
-
 (defn sub-newlines [body]
                  (clojure.string/replace body #"\r\n" "<br>") )
 
@@ -55,14 +59,28 @@
 (defn getepoch [timestamp]
   (int (/ (.getMillis timestamp) 1000)))
 
+(defn gen-post-link [time title]
+  (str "/" (year-month time) (sanitize-title title) "-" (getepoch time)))
 
+;copied
+(defn get-link-id [link]
+                  (Integer/parseInt (last (re-seq #"\d+" link))))
 
+(defn get-post [timestamp]
+  (mc/find-one-as-map db-blog {:timestamp timestamp}))
 
+;copied over
 
 (defn sanitize-tags [tags]
   (map #(clojure.string/replace % #"[ \t\n]+" "-")
                    (map clojure.string/trim
                         (clojure.string/split (.toLowerCase tags) #","))))
+
+(defn insert-comments-into-db [username comment timestamp]
+  (mc/insert db-comments {:timestamp timestamp :time (time/now) :username username :comment (sub-newlines comment)}))
+
+(defn get-comments [timestamp]
+  (mc/find-maps db-comments {:timestamp timestamp}))
 
 (defn insert-post-into-db [title tags post]
   (mc/insert db-blog {:timestamp (getepoch (time/now))  :time (time/now) :title title :tags (sanitize-tags tags) :post (sub-newlines post)})

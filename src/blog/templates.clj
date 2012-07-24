@@ -20,9 +20,6 @@
 (defn gen-post-link-anchor [time title]
   [:a {:href (backend/gen-post-link time title)} title])
 
-(apply backend/gen-post-link (first (map #(list (:time %)
-                                                (:title %))
-                                         (monger.collection/find-maps db-blog))))
 
 (defn view-body-index [& content]
   (list (divs ["navbar navbar-fixed-top" "navbar-inner" "container-fluid"]
@@ -33,7 +30,7 @@
         (divs ["container-fluid" "row-fluid"]
               (divs ["span3" "well sidebar-nav"]
                     [:ul.nav.nav-list
-                     (gen-list (backend/get-tags-db))])
+                     (gen-list (backend/get-tags-db))]) ;if nothing in blog this blows up
               (divs ["span9"]
                     [:div.hero-unit
                      [:h1 "Blog of Firesofmay"]
@@ -45,29 +42,75 @@
     [:fieldset
 
      [:div.control-group
-      (label {:class "control-label"} "input01" "Title")
+      (label {:class "control-label"} "title" "Title")
       [:div.controls
-       [:input#input01.input-xlarge {:name "title" :type "text" :style "width: 100%; padding: 4px 0px;"}]]]
+       [:input#title.input-xlarge {:name "title" :type "text" :style "width: 100%; padding: 4px 0px;"}]]]
 
      [:div.control-group
-      (label {:class "control-label"} "input02" "Tags")
+      (label {:class "control-label"} "tags" "Tags")
       [:div.controls
-       [:input#input02.input-xlarge {:name "tags" :type "text" :style "width: 100%; padding: 4px 0px;"}]]]
+       [:input#tags.input-xlarge {:name "tags" :type "text" :style "width: 100%; padding: 4px 0px;"}]]]
 
      [:div.control-group
-      (label {:class "control-label"} "text1" "Post")
+      (label {:class "control-label"} "post" "Post")
       [:div.controls
-       [:textarea#text1.input-xlarge {:name "post" :rows "10" :style "width: 100%; padding: 4px 0px;"}]]]
+       [:textarea#post.input-xlarge {:name "post" :rows "10" :style "width: 100%; padding: 4px 0px;"}]]]
 
      [:div.form-actions
       [:button.btn.btn-primary {:type "Submit" :value "submit"} "Submit Post"]
       [:button.btn {:type "Reset" :value "Reset"} "Reset"]]]))
 
-(defn test-hello []
-  (for [x (backend/get-coll db-blog)]
-    [:div.row-fluid
-     [:h1 (blog.templates/gen-post-link-anchor (:time x) (:title x))]
-     [:p (:post x)]]))
+(defn add-comments [link]
+  (form-to {:class "form-horizontal"} [:post link]
+    [:fieldset
+     [:legend "Enter Comments"]
+     [:div.control-group
+      (label {:class "control-label"} "username" "Username")
+      [:div.controls
+       [:input#username.input-xlarge
+        {:name "username" :type "text"}]]]
+
+     [:div.control-group
+      (label {:class "control-label"} "comment" "Comment")
+      [:div.controls
+       [:textarea#comment.input-xlarge
+        {:name "comment" :type "text"}]]]
+
+     (divs ["control-group" "controls"]
+           [:input {:type "hidden" "name" "timestamp" "value" (backend/get-link-id link)}])
+
+     [:div.form-actions
+      [:button.btn.btn-primary {:type "Submit" :value "submit"} "Submit Post"]
+      [:button.btn {:type "Reset" :value "Reset"} "Reset"]]]))
+
+(defn show-comments [coll]
+  (list
+   [:legend "Comments"]
+   (for [x coll]
+     (divs ["control-group" "controls"]
+           [:h3 (:username x) " commented on : " (backend/year-month-date(:time x))]
+           [:p (:comment x)]))))
+
+(defn show-post [timestamp link]
+  (let [post (backend/get-post timestamp)]
+    (list [:h2 (:title post)]
+          [:p (:post post)]
+          (show-comments (backend/get-comments (str timestamp)))
+          (add-comments link))))
+
+
+
+(defn show-one-post [link uri]
+  (show-post (backend/get-link-id link) uri))
+
+(defn main-page []
+  (let [coll (backend/get-coll backend/db-blog)]
+    (if (empty? coll)
+      [:h2 "Write your first blog post by clicking on New Post."]
+      (for [x coll]
+        [:div.row-fluid
+         [:h1 (gen-post-link-anchor (:time x) (:title x))]
+         [:p (:post x)]]))))
 
 (defn view-head [& content]
   (html

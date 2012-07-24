@@ -10,7 +10,7 @@
 
 (defroutes handler
   (GET "/" []
-    (templates/view-head (templates/test-hello)))
+    (templates/view-head (templates/main-page)))
 
   (GET "/new-post" []
     (templates/view-head (templates/template-new-post)))
@@ -18,6 +18,14 @@
   (POST "/new-post" [title tags post]
     (println title (backend/sanitize-tags tags) post)
     (backend/insert-post-into-db title tags post)
+    (redirect "/"))
+
+  (GET ["/:year/:month/:link" :year #"\d{4}"  :month #"\d{2}"] []
+    (fn [req]
+      (templates/view-head (templates/show-one-post (get-in req [:route-params :link]) (:uri req)))))
+
+  (POST ["/:year/:month/:link" :year #"\d{4}"  :month #"\d{2}"] [username comment timestamp]
+    (backend/insert-comments-into-db username comment timestamp)
     (redirect "/"))
 
   (compojure.route/not-found "Page not Found"))
