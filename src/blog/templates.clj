@@ -76,7 +76,7 @@
     [:fieldset
      [:legend "Enter Comments"]
      [:div.control-group
-      (label {:class "control-label"} "username" "Username")
+      (label {:class "control-label"} "name" "Name")
       [:div.controls
        [:input#username.input-xlarge
         {:name "username" :type "text"}]]]
@@ -130,7 +130,7 @@
    (add-pagination page)))
 
 (defn tag-page [coll]
-  (let [coll (backend/get-coll-tag db-blog coll)]
+  (let [coll (backend/get-coll-tag backend/db-blog coll)]
     (if (empty? coll)
       [:h2 "Invalid Tag."]
       (for [x coll]

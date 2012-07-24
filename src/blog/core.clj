@@ -16,8 +16,7 @@
     (templates/view-head (templates/template-new-post)))
 
   (POST "/new-post" [title tags post]
-    (backend/insert-post-into-db title tags post)
-    (redirect "/"))
+    (backend/insert-post-into-db title tags post))
 
   (GET ["/:year/:month/:link" :year #"\d{4}"  :month #"\d{2}"] []
     (fn [req]

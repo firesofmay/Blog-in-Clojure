@@ -9,6 +9,7 @@
   (:require [monger.core :as mg])
   (:refer-clojure :exclude [sort find])
   (:use monger.query)
+  (:use [ring.util.response :only [redirect]])
   (:require [hiccup.util :as hu])
   (:require [monger.collection :as mc]))
 
@@ -88,13 +89,15 @@
   (mc/find-maps db-comments {:timestamp timestamp}))
 
 (defn insert-post-into-db [title tags post]
-  (let [sanitized-tags (sanitize-tags tags)]
-    (mc/insert db-blog {:timestamp (getepoch (time/now))
-                        :time (time/now)
+  (let [sanitized-tags (sanitize-tags tags)
+        curr-time (time/now)]
+    (mc/insert db-blog {:timestamp (getepoch curr-time)
+                        :time curr-time
                         :title (hu/escape-html title)
                         :tags sanitized-tags
                         :post (sub-newlines (hu/escape-html post))})
-    (add-tags db-base sanitized-tags)))
+    (add-tags db-base sanitized-tags)
+    (redirect (gen-post-link curr-time title))))
 
 (defn pagination [page-number]
   (with-collection db-blog
