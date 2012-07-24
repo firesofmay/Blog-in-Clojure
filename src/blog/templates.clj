@@ -14,12 +14,20 @@
 
 (defn gen-list [coll]
   (for [x coll]
-    [:li [:a {:href (str "/" x)} x]]))
+    [:li [:a {:href (str "/tag/" x)} x]]))
 
 
 (defn gen-post-link-anchor [time title]
   [:a {:href (backend/gen-post-link time title)} title])
 
+(defn add-pagination [page-number]
+  [:ul.pager
+   (if (and (not= page-number (backend/get-max-pages)) (> (backend/get-max-pages) 1))
+     [:li.next
+      (link-to (str "/page-number/" (inc page-number)) "Older &rarr;")])
+   (if (> page-number 1)
+     [:li.previous
+      (link-to (str "/page-number/" (dec page-number)) "&larr; Newer")])])
 
 (defn view-body-index [& content]
   (list (divs ["navbar navbar-fixed-top" "navbar-inner" "container-fluid"]
@@ -35,7 +43,10 @@
                     [:div.hero-unit
                      [:h1 "Blog of Firesofmay"]
                      [:p "This is my blog written in clojure."]]
-                    (divs ["row-fluid"] content)))))
+                    (divs ["row-fluid"]
+                          content)))))
+
+
 
 (defn template-new-post []
   (form-to {:class "form-horizontal"} [:post "/new-post"]
@@ -77,10 +88,14 @@
         {:name "comment" :type "text"}]]]
 
      (divs ["control-group" "controls"]
-           [:input {:type "hidden" "name" "timestamp" "value" (backend/get-link-id link)}])
+           [:input {:type "hidden" :name "timestamp" :value (backend/get-link-id link)
+                    }])
+
+     (divs ["control-group" "controls"]
+           [:input {:type "hidden" :name "link" :value link}])
 
      [:div.form-actions
-      [:button.btn.btn-primary {:type "Submit" :value "submit"} "Submit Post"]
+      [:button.btn.btn-primary {:type "Submit" :value "submit"} "Add Comments"]
       [:button.btn {:type "Reset" :value "Reset"} "Reset"]]]))
 
 (defn show-comments [coll]
@@ -103,10 +118,21 @@
 (defn show-one-post [link uri]
   (show-post (backend/get-link-id link) uri))
 
-(defn main-page []
-  (let [coll (backend/get-coll backend/db-blog)]
+(defn main-page [page]
+  (list
+   (let [coll (backend/pagination page)]
+     (if (empty? coll)
+       [:h2 "Write your first blog post by clicking on New Post."]
+       (for [x coll]
+         [:div.row-fluid
+          [:h1 (gen-post-link-anchor (:time x) (:title x))]
+          [:p (:post x)]])))
+   (add-pagination page)))
+
+(defn tag-page [coll]
+  (let [coll (backend/get-coll-tag db-blog coll)]
     (if (empty? coll)
-      [:h2 "Write your first blog post by clicking on New Post."]
+      [:h2 "Invalid Tag."]
       (for [x coll]
         [:div.row-fluid
          [:h1 (gen-post-link-anchor (:time x) (:title x))]
@@ -123,6 +149,5 @@
                        :content= "width=device-width, initial-scale=1.0"}]
                (include-css "/assets/css/bootstrap.css"
                             "/assets/css/bootstrap-responsive.css"
-                            "/assets/css/inline.css")
-               ]
+                            "/assets/css/inline.css")]
               [:body (view-body-index content)])))

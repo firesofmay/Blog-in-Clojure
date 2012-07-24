@@ -10,7 +10,7 @@
 
 (defroutes handler
   (GET "/" []
-    (templates/view-head (templates/main-page)))
+    (templates/view-head (templates/main-page 1)))
 
   (GET "/new-post" []
     (templates/view-head (templates/template-new-post)))
@@ -23,9 +23,16 @@
     (fn [req]
       (templates/view-head (templates/show-one-post (get-in req [:route-params :link]) (:uri req)))))
 
-  (POST ["/:year/:month/:link" :year #"\d{4}"  :month #"\d{2}"] [username comment timestamp]
+  (POST ["/:year/:month/:link" :year #"\d{4}"  :month #"\d{2}"] [username comment timestamp link]
     (backend/insert-comments-into-db username comment timestamp)
-    (redirect "/"))
+    (redirect link))
+
+  (GET ["/page-number/:page" :page #"\d+"] [page]
+    (templates/view-head (templates/main-page (Long/parseLong page))))
+
+  (GET "/tag/:tag" [tag]
+    (string? tag)
+    (templates/view-head (templates/tag-page tag)))
 
   (compojure.route/not-found "Page not Found"))
 

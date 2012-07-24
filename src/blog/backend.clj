@@ -7,6 +7,8 @@
   (:require monger.json)      ;this is required by joda-time
   (:require [clj-time.format :as tf])
   (:require [monger.core :as mg])
+  (:refer-clojure :exclude [sort find])
+  (:use monger.query)
   (:require [hiccup.util :as hu])
   (:require [monger.collection :as mc]))
 
@@ -17,6 +19,7 @@
 (def ^:const db-blog "blogs")
 (def ^:const db-comments "comments")
 (def ^:const db-base "base-coll")
+(def ^:const max-page 5)
 
 (defn year-month [time]
   (tf/unparse (tf/formatter "yyyy/MM") time))
@@ -26,18 +29,18 @@
 
 (year-month-date  (first (map #(:time %) (mc/find-maps db-comments))))
 
-#_(defn get-posts-db []
-  (map #(list (gen-post-link (:time %) (:title %) ))
-                            (mc/find-maps db-blog)))
+(defn get-coll-tag [tag]
+  (mc/find-maps db-blog
+                {:tags {$in [tag]}}))
 
 (defn get-coll [coll]
   (mc/find-maps coll))
 
 (defn get-tags-db []
   (let [coll (mc/find-maps db-base)]
-   (if (empty? coll)
-       [""]
-       (apply :tags coll))))
+    (if (empty? coll)
+      [""]
+      (apply :tags coll))))
 
 (defn show [coll]
   (clojure.pprint/pprint
@@ -52,7 +55,7 @@
 
 
 (defn sub-newlines [body]
-                 (clojure.string/replace body #"\r\n" "<br>") )
+  (clojure.string/replace body #"\r\n" "<br>") )
 
 (defn sanitize-title [title]
   (str "/" (clojure.string/join "-" (map #(.toLowerCase %) (re-seq #"[A-Za-z0-9]+" title)))))
@@ -63,19 +66,17 @@
 (defn gen-post-link [time title]
   (str "/" (year-month time) (sanitize-title title) "-" (getepoch time)))
 
-;copied
 (defn get-link-id [link]
-                  (Integer/parseInt (last (re-seq #"\d+" link))))
+  (Integer/parseInt (last (re-seq #"\d+" link))))
 
 (defn get-post [timestamp]
   (mc/find-one-as-map db-blog {:timestamp timestamp}))
 
-;copied over
 
 (defn sanitize-tags [tags]
   (map #(clojure.string/replace % #"[ \t\n]+" "-")
-                   (map clojure.string/trim
-                        (clojure.string/split (hu/escape-html (.toLowerCase tags)) #","))))
+       (map clojure.string/trim
+            (clojure.string/split (hu/escape-html (.toLowerCase tags)) #","))))
 
 (defn insert-comments-into-db [username comment timestamp]
   (mc/insert db-comments {:timestamp timestamp
@@ -88,9 +89,43 @@
 
 (defn insert-post-into-db [title tags post]
   (let [sanitized-tags (sanitize-tags tags)]
-   (mc/insert db-blog {:timestamp (getepoch (time/now))
-                       :time (time/now)
-                       :title (hu/escape-html title)
-                       :tags sanitized-tags
-                       :post (sub-newlines (hu/escape-html post))})
-   (add-tags db-base sanitized-tags)))
+    (mc/insert db-blog {:timestamp (getepoch (time/now))
+                        :time (time/now)
+                        :title (hu/escape-html title)
+                        :tags sanitized-tags
+                        :post (sub-newlines (hu/escape-html post))})
+    (add-tags db-base sanitized-tags)))
+
+(defn pagination [page-number]
+  (with-collection db-blog
+    (find {})
+    (fields [:title :post :time])
+    (sort {:time -1})
+    (paginate :page page-number :per-page max-page)))
+
+(defn get-max-pages []
+  (long (Math/ceil (/ (mc/count db-blog) max-page))))
+
+
+
+(comment
+  (do
+    (mc/remove db-blog)
+    (mc/remove db-base)
+    (mc/remove db-comments)))
+
+(comment
+  (doseq [x [["1" "tag1, tag2" "111"]
+             ["2" "tag1" "111"]
+             ["3" "tag2" "111"]
+             ["4" "tag2" "111"]
+             ["5" "tag1,tag3" "111"]
+             ["6" "tag1,tag3" "111"]
+             ["7" "tag1,tag3" "111"]
+             ["8" "tag1,tag3" "111"]
+             ["9" "tag1,tag4" "111"]
+             ["10" "tag1,tag4" "111"]
+             ["11" "tag1,tag4" "111"]
+             ["12" "tag1,tag4" "111"]
+             ["13" "tag1,tag4" "111"]]]
+    (apply insert-post-into-db x)))
