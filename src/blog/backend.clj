@@ -7,6 +7,7 @@
   (:require monger.json)      ;this is required by joda-time
   (:require [clj-time.format :as tf])
   (:require [monger.core :as mg])
+  (:require [hiccup.util :as hu])
   (:require [monger.collection :as mc]))
 
 ;; localhost, default port
@@ -44,7 +45,7 @@
 
 (defn add-tags [coll tags]
   (doseq [tag tags]
-    (mc/update coll {:_id 1} {$addToSet {:tags (clojure.string/lower-case tag)}} :upsert true)))
+    (mc/update coll {:_id 1} {$addToSet {:tags tag}} :upsert true)))
 
 (defn time-format [timestamp]
   (tf/unparse (tf/formatters :year-month-day) timestamp))
@@ -74,14 +75,22 @@
 (defn sanitize-tags [tags]
   (map #(clojure.string/replace % #"[ \t\n]+" "-")
                    (map clojure.string/trim
-                        (clojure.string/split (.toLowerCase tags) #","))))
+                        (clojure.string/split (hu/escape-html (.toLowerCase tags)) #","))))
 
 (defn insert-comments-into-db [username comment timestamp]
-  (mc/insert db-comments {:timestamp timestamp :time (time/now) :username username :comment (sub-newlines comment)}))
+  (mc/insert db-comments {:timestamp timestamp
+                          :time (time/now)
+                          :username (hu/escape-html username)
+                          :comment (hu/escape-html (sub-newlines comment))}))
 
 (defn get-comments [timestamp]
   (mc/find-maps db-comments {:timestamp timestamp}))
 
 (defn insert-post-into-db [title tags post]
-  (mc/insert db-blog {:timestamp (getepoch (time/now))  :time (time/now) :title title :tags (sanitize-tags tags) :post (sub-newlines post)})
-  (add-tags db-base (sanitize-tags tags)))
+  (let [sanitized-tags (sanitize-tags tags)]
+   (mc/insert db-blog {:timestamp (getepoch (time/now))
+                       :time (time/now)
+                       :title (hu/escape-html title)
+                       :tags sanitized-tags
+                       :post (sub-newlines (hu/escape-html post))})
+   (add-tags db-base sanitized-tags)))
